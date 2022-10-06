@@ -1,0 +1,76 @@
+---
+title: "p8105_hw3_sx2337"
+author: "Shun Xie"
+date: "2022-10-06"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+Include all the packages and load options so that tibble data will only print first five rows:
+```{r}
+library('tidyverse')
+options(tibble.print_min = 5)
+```
+
+
+
+# Problem 2
+
+I am given the five weeks of accelerometer data collected on a 63 year-old male with BMI 25. The data is loaded and cleaned name here:
+```{r}
+acc_data = read_csv("data/accel_data.csv") %>% 
+  janitor::clean_names()
+acc_data
+```
+
+The data has week, day_id, day and 1440 activity with their respective measured number. The data is too long to be read and therefore, I will do the following procedure:
+
+1. privot long and create a column that store the activtity number and corresponding activity count. 
+2. create a column specifying weekday or weekend.
+3. encode data with reasonable variable classes. Additionally, I factor the day variable so that day is leveled from Monday to Sunday in order.
+4. rearrange the order of columns and make week, day etc in the front and activity_minute and activity_count at the end. 
+
+```{r}
+acc_data_tidy = acc_data %>% 
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = 'activity_minute',
+    names_prefix = "activity_",
+    values_to = 'activity_count'
+  ) %>% 
+  mutate(
+    weekday_or_weekend = ifelse(day=='Saturday' | day=='Sunday', "weekend", "weekday")
+    ) %>% 
+  mutate(
+    week = as.integer(week),
+    day_id = as.integer(day_id),
+    day = factor(day,levels= c("Monday", 
+    "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday")),
+    weekday_or_weekend = factor(weekday_or_weekend)
+) %>% 
+  select(week:day,weekday_or_weekend,everything())
+acc_data_tidy
+```
+The resulting data now has 6 variables, namely the week variable specifying the week number, day_id variable specifying the id of the day, day variable which measures the day is Monday to Sunday, activity_minute variable measures for each minute of a 24-hour day starting at midnight, activity_count measures the count of activity during the one minute interval and weekday_or_weekend variable specifying the day is weekday or weekend. 
+
+
+
+In the second part, I create a table that summarize the total activity count of each day by following:
+
+1. using group_by to select the distint pairs of week and day variable
+2. summarize the sum respect to week and day
+3. create the table using pivot_wider
+
+```{r}
+acc_data_tidy %>% 
+  group_by(week,day) %>% 
+  summarize(total_count = sum(activity_count)) %>% 
+  pivot_wider(
+    names_from = day,
+    values_from = total_count
+  )
+```
+There is no apparent obvious trend according to the table. It seems like on last two weeks of Saturday, the old male does not do many activity and activity count during weekdays are relatively stable. 
