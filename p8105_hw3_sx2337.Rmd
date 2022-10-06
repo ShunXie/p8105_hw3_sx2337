@@ -74,3 +74,23 @@ acc_data_tidy %>%
   )
 ```
 There is no apparent obvious trend according to the table. It seems like on last two weeks of Saturday, the old male does not do many activity and activity count during weekdays are relatively stable. 
+
+
+
+In the last part, I will make ggplot on time courses for each day. 
+
+
+```{r}
+acc_data_tidy %>% 
+  ggplot(aes(x=activity_minute,y=activity_count, color=day)) + geom_point() +geom_line()+theme(legend.position = "bottom")+
+  labs(
+    title = "Activity plot",
+    x = "minute of the day",
+    y = "activity count")+
+  scale_x_discrete(
+    breaks = seq(from = 0, to = 1440, by = 60), 
+    labels = seq(from = 0, to = 1440, by = 60))
+
+```
+
+The plotting as above. There is some up and down but on Sunday, the old man is more active when it is close to 660 (around 11am) while during week days, the old man is very active during the end of the day 1200 (around 8pm). Over all days, can see that the old man is inactive between 1440 (12pm) and 540 (9am) and he is likely to be sleeping during the time. He is more active during 1200 (around 8pm) and 660 (around 11am) according to the plot. 
