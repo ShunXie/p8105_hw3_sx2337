@@ -14,6 +14,69 @@ Include all the packages and load options so that tibble data will only print fi
 library('tidyverse')
 options(tibble.print_min = 5)
 ```
+# Problem 1
+```{r}
+library(p8105.datasets)
+data("instacart")
+instacart
+```
+There are ```r nrow(instacart)``` number of samples measuring the number of orders and product being purchased in each cart. Each product has its aisle and department 
+
+Q1:
+```{r}
+instacart %>% 
+  distinct(aisle) %>% 
+  nrow()
+```
+
+```{r}
+instacart %>% 
+  group_by(aisle) %>% 
+  distinct() %>% 
+  summarize(num=n()) %>% 
+  arrange(desc(num))
+```
+Fresh vegetables has the most item order.
+
+Q2
+```{r}
+instacart %>% 
+  group_by(aisle) %>% 
+  distinct() %>% 
+  mutate(num=n()) %>% 
+  ungroup %>% 
+  filter(num>10000) %>% 
+  mutate(aisle = fct_reorder(aisle,num)) %>% 
+  ggplot(aes(x = aisle,y=num))+geom_bar(stat="identity")+coord_flip()+labs(
+    title = "number of order in each aisle")
+
+```
+
+Q3
+```{r}
+instacart %>% 
+  filter(aisle=="baking ingredients"|
+           aisle=="dog food care" |
+           aisle=="packaged vegetables fruits") %>% 
+  group_by(aisle, product_name) %>% 
+  summarize(num=n()) %>% 
+  ungroup() %>% 
+  arrange(desc(num)) %>% 
+  group_by(aisle) %>% 
+  slice(1:3) 
+```
+Q4:
+```{r}
+instacart %>% 
+  filter(product_name=="Pink Lady Apples" | product_name == "Coffee Ice Cream") %>% 
+  group_by(product_name,order_dow) %>% 
+  summarize(mean_hour = mean(order_hour_of_day)) %>% 
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour
+  )
+```
+
 
 
 
@@ -88,8 +151,8 @@ acc_data_tidy %>%
     x = "minute of the day",
     y = "activity count")+
   scale_x_discrete(
-    breaks = seq(from = 0, to = 1440, by = 60), 
-    labels = seq(from = 0, to = 1440, by = 60))
+    breaks = seq(from = 0, to = 1440, by = 120), 
+    labels = seq(from = 0, to = 1440, by = 120))
 
 ```
 
@@ -188,7 +251,7 @@ Then I make a box plot showing the distribution of snowfall values greater than 
 ny_noaa_tidy %>% 
   filter(snow>0 & snow<100) %>% 
   ggplot(aes(x=factor(year),y=snow))+ geom_boxplot(aes(fill = factor(year),alpha=.5))+stat_summary(fun = "median", color = "blue")+
-  labs(title = "Boxplot for snow fall over years")+theme(legend.position = "bottom")
+  labs(title = "Boxplot for snow fall over years")+coord_flip()
 ```
 
 Can be seen by the boxplots, over the 30 years the median of snowfall is persistently around 25mm. In the year from 1981 to 1997, the interquartile range are almost the same. Only when it comes to year 2006 the box plot has a lower quartile than other years with a few outliers ranging from 75mm  to 100mm. 
