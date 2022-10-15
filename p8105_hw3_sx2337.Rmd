@@ -6,7 +6,10 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  fig.asp = .6,
+  fig.width = 10
+)
 
 ```
 Include all the packages and load options so that tibble data will only print first five rows:
@@ -109,6 +112,7 @@ acc_data_tidy = acc_data %>%
     ) %>% 
   mutate(
     week = as.integer(week),
+    activity_minute = as.numeric(activity_minute),
     day_id = as.integer(day_id),
     day = factor(day,levels= c("Monday", 
     "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday")),
@@ -117,7 +121,7 @@ acc_data_tidy = acc_data %>%
   select(week:day,weekday_or_weekend,everything())
 acc_data_tidy
 ```
-The resulting data now has 6 variables, namely the week variable specifying the week number, day_id variable specifying the id of the day, day variable which measures the day is Monday to Sunday, activity_minute variable measures for each minute of a 24-hour day starting at midnight, activity_count measures the count of activity during the one minute interval and weekday_or_weekend variable specifying the day is weekday or weekend. 
+The resulting data now has 6 variables, namely the week variable specifying the week number, day_id variable specifying the id of the day, day variable which measures the day from Monday to Sunday, activity_minute variable measures the minute when the activity count was collected from the start of the day to midnight, activity_count measures the count of activity during the one minute interval and weekday_or_weekend variable specifying the day is weekday or weekend. 
 
 
 
@@ -134,7 +138,9 @@ acc_data_tidy %>%
   pivot_wider(
     names_from = day,
     values_from = total_count
-  )
+  ) %>% 
+  knitr::kable()
+
 ```
 There is no apparent obvious trend according to the table. It seems like on last two weeks of Saturday, the old male does not do many activity and activity count during weekdays are relatively stable. 
 
@@ -150,13 +156,14 @@ acc_data_tidy %>%
     title = "Activity plot",
     x = "minute of the day",
     y = "activity count")+
-  scale_x_discrete(
-    breaks = seq(from = 0, to = 1440, by = 120), 
-    labels = seq(from = 0, to = 1440, by = 120))
+  scale_x_continuous(
+    breaks = c(0,180,360,540,720,900,1080,1260,1440),
+    labels = c("12AM","3AM","6AM","9AM","12PM","3PM","6PM","9PM","12AM"),
+    limits = c(0,1440))
 
 ```
 
-The plotting as above. There is some up and down but on Sunday, the old man is more active when it is close to 660 (around 11am) while during week days, the old man is very active during the end of the day 1200 (around 8pm). Over all days, can see that the old man is inactive between 1440 (12pm) and 540 (9am) and he is likely to be sleeping during the time. He is more active during 1200 (around 8pm) and 660 (around 11am) according to the plot. 
+The plotting as above. There is some up and down but on Sunday, the old man is more active when it is close to 12PM while during week days, the old man is very active during the end of the day around 8pm. Over all days, can see that the old man is inactive between 12PM and 9AM and he is likely to be sleeping during the time. He is more active during 8PM and 11AM according to the plot. 
 
 
 # Problem 3
@@ -179,7 +186,7 @@ nrow(no_missing_ny_noaa)
 
 ```
 There are a total of ```r nrow(ny_noaa)-nrow(no_missing_ny_noaa)```
-missing data, which is ```r nrow(no_missing_ny_noaa)/nrow(ny_noaa)*100```% of the total observations. This is almost a half of all observations. Therefore, missing data is an issue. But since the observation left is ```r nrow(no_missing_ny_noaa)```, which is huge. In consequence, remove the data will not have a big problem as there is still enough data to make a conclusion. 
+rows that contains missing data, which is ```r nrow(no_missing_ny_noaa)/nrow(ny_noaa)*100```% of the total observations. This is almost a half of all observations. Therefore, missing data is an issue. But since the observation left is ```r nrow(no_missing_ny_noaa)```, which is huge. In consequence, remove the data will not have a big problem as there is still enough data to make a conclusion. 
 
 
 First, clean the data:
@@ -202,6 +209,19 @@ ny_noaa_tidy =
 ny_noaa_tidy
   
 ```
+
+In order to find the mode of value for snow fall, it is possible to count the value. 
+
+```{r}
+ny_noaa_tidy %>%
+  na.omit() %>% 
+  count(snow) %>%
+  arrange(desc(n))
+```
+
+
+Or find mode n by function:
+
 ```{r}
 #create a function to obtain mode
 modefunct <- function(val){
@@ -220,17 +240,46 @@ The most common value is ```r modefunct(na.omit(ny_noaa_tidy$snow))```. This mea
 
 In the second part, I make a two-panel box plot which can be used to show the average max temperature in January and in July in each station across years.
 
-```{r}
+```{r,warning=FALSE}
 ny_noaa_tidy %>% 
   filter(month=='Jan'|month=='Jul') %>% 
   ggplot(aes(x = month, y = tmax)) + geom_boxplot(aes(fill = month,alpha=.5))+stat_summary(fun = "median", color = "blue")+
   labs(title = "tmax for January and July")
 ```
-According to the boxplot, the median for maximum temperature in January is approximately 0 in tenth degree C, whereas the median value for maximum temperature in July is approximately 270. Hence July has a median higher than the maximum temperature in January. However, can be seen in the blox plot, there are many outliers in the boxplot for January than the one in July. More importantly, the maximum temperature in January is more spread out than the one in July, as indicated by the thicker interquartile range and a greater range of values. The maximum outlier for January can be as high as 600 tenth of degree C, which is higher than the maximum temperature outlier for July, and as cold as -300 tenth of degree C, which is lower than the minimum temperature in July. 
+On the other hand, I also plot a mean temperature for all year for corresponding mean temperature of the weather station in Januaray and July respectively along the graph. Here is the plotting:
+
+```{r, warning=FALSE}
+ny_noaa_tidy %>% 
+  group_by(id, year, month) %>%
+  filter(month=='Jan'|month=='Jul') %>% 
+  summarize(mean_val_tmax = mean(tmax,na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x=year, y=mean_val_tmax, color = month))+
+  geom_point(alpha=.1)+
+  geom_smooth(alpha=.5)+
+  labs(
+    title = "Average tmax for all station across years in January and July",
+    x = "year",
+    y = "temperatue"
+    )+
+  scale_x_continuous(breaks = seq(1980,2010,5))+
+  facet_grid(. ~ month) +
+  scale_color_manual(values = c("blue", "orange"))
+
+```
 
 
-In the last part, I will first make a boxplot for tmax vs tmin for the full dataset by first merge the tmax and tmin together into a temperature value using pivot longer and plot boxplot using ggplot:
+
+According to the boxplot and the plot over all years, the median for maximum temperature in January is approximately 0 in tenth degree C, whereas the median value for maximum temperature in July is approximately 270. Hence July has a median higher than the maximum temperature in January. However, can be seen in the blox plot, there are many outliers in the boxplot for January than the one in July. More importantly, the maximum temperature in January is more spread out than the one in July, as indicated by the thicker interquartile range and a greater range of values. The maximum outlier for January can be as high as 600 tenth of degree C, which is higher than the maximum temperature outlier for July, and as cold as -300 tenth of degree C, which is lower than the minimum temperature in July. 
+
+In terms of the plot for average tmax over all years, the range of mean temperature over all year in January also have a greater range than the mean temperature in July. The fluctuation over all year also suggest that temperature in July is more stable than the one in January. 
+
+
+
+
+In the last part, I will first make a boxplot for tmax vs tmin for the full dataset by first merge the tmax and tmin together into a temperature value using pivot longer and plot boxplot using ggplot.
 ```{r}
+ny_boxplot_tmax_vs_tmin = 
 ny_noaa_tidy %>% 
   pivot_longer(
     c(tmin,tmax),
@@ -238,24 +287,64 @@ ny_noaa_tidy %>%
     values_to = "tval"
   ) %>% 
   ggplot(aes(x=temperature_type,y=tval))+ geom_boxplot(aes(fill = temperature_type,alpha=.5))+stat_summary(fun = "median", color = "blue")+
-  labs(title = "Boxplot for tmax and tmin")
+  labs(title = "Boxplot for tmax and tmin")+theme(legend.position = "none")
   
 ```
-
-
-Can be seen from the boxplot, tmax has a median of approximately 150 whereas tmin has a median of around 30. tmin also has a wider range than tmax.
-
 Then I make a box plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
 
 ```{r}
-ny_noaa_tidy %>% 
+ny_noaa_distrioveryear = ny_noaa_tidy %>% 
   filter(snow>0 & snow<100) %>% 
   ggplot(aes(x=factor(year),y=snow))+ geom_boxplot(aes(fill = factor(year),alpha=.5))+stat_summary(fun = "median", color = "blue")+
-  labs(title = "Boxplot for snow fall over years")+coord_flip()
+  labs(title = "Boxplot for snow fall over years",
+       x = "Snowfall (mm)",
+        y = "density")+
+  coord_flip()+theme(legend.position = "none")
 ```
 
-Can be seen by the boxplots, over the 30 years the median of snowfall is persistently around 25mm. In the year from 1981 to 1997, the interquartile range are almost the same. Only when it comes to year 2006 the box plot has a lower quartile than other years with a few outliers ranging from 75mm  to 100mm. 
+Here is the two panel plot of the above two graph:
+```{r}
+library(gridExtra)
+grid.arrange(ny_boxplot_tmax_vs_tmin, ny_noaa_distrioveryear, ncol=2)
 
+```
+
+
+Can be seen from the boxplot on the left hand side, tmax has a median of approximately 150 whereas tmin has a median of around 30. tmin also has a wider range than tmax.
+
+Can be seen by the boxplots on the right hand side, over the 30 years the median of snowfall is persistently around 25mm. In the year from 1981 to 1997, the interquartile range are almost the same. Only when it comes to year 2006 the box plot has a lower quartile than other years with a few outliers ranging from 75mm  to 100mm. 
+
+On the other hand, I create a two-panel plot for tmax against tmin on left hand side using hexagon plot and on the right hand side, I plot the density plot of all years:
+
+
+```{r,warning=FALSE}
+library(ggridges)
+
+ny_hexagon = 
+  ny_noaa_tidy %>% 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_hex() +
+  labs(title = "Hexagon plot for max vs min temperature",
+       x = "tmin",
+       y = "tmax")+theme(legend.position = "left")
+  
+
+density_for_all_year = 
+  ny_noaa_tidy %>% 
+  filter(snow>0 & snow<100) %>% 
+  ggplot(aes(x = snow, y = year,group = year)) + 
+  geom_density_ridges(scale = .85)+
+  scale_x_continuous(
+      breaks = seq(0,100,10)) +
+    scale_y_continuous(
+      breaks = seq(1980,2010,5))+
+  labs(title="Desnity for all snowfall over years",
+       x = "snowfall",
+       y = "year")
+
+grid.arrange(ny_hexagon, density_for_all_year, ncol=2)
+  
+```
 
 
 
