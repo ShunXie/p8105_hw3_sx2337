@@ -55,7 +55,7 @@ instacart %>%
 ```
 
 Q3
-```{r}
+```{r,warning=FALSE}
 instacart %>% 
   filter(aisle=="baking ingredients"|
            aisle=="dog food care" |
@@ -68,7 +68,7 @@ instacart %>%
   slice(1:3) 
 ```
 Q4:
-```{r}
+```{r,warning=FALSE}
 instacart %>% 
   filter(product_name=="Pink Lady Apples" | product_name == "Coffee Ice Cream") %>% 
   group_by(product_name,order_dow) %>% 
@@ -85,7 +85,7 @@ instacart %>%
 # Problem 2
 
 I am given the five weeks of accelerometer data collected on a 63 year-old male with BMI 25. The data is loaded and cleaned name here:
-```{r}
+```{r,warning=FALSE}
 acc_data = read_csv("data/accel_data.csv") %>% 
   janitor::clean_names()
 acc_data
@@ -130,7 +130,7 @@ In the second part, I create a table that summarize the total activity count of 
 2. summarize the sum respect to week and day
 3. create the table using pivot_wider
 
-```{r}
+```{r,warning=FALSE}
 acc_data_tidy %>% 
   group_by(week,day) %>% 
   summarize(total_count = sum(activity_count)) %>% 
@@ -302,7 +302,7 @@ ny_noaa_distrioveryear = ny_noaa_tidy %>%
 ```
 
 Here is the two panel plot of the above two graph:
-```{r}
+```{r,warning=FALSE}
 library(gridExtra)
 grid.arrange(ny_boxplot_tmax_vs_tmin, ny_noaa_distrioveryear, ncol=2)
 ```
