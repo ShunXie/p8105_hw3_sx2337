@@ -7,10 +7,9 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  fig.asp = .6,
-  fig.width = 10
+  fig.width = 10,
+  fig.asp = .6
 )
-
 ```
 Include all the packages and load options so that tibble data will only print first five rows:
 ```{r}
@@ -306,7 +305,6 @@ Here is the two panel plot of the above two graph:
 ```{r}
 library(gridExtra)
 grid.arrange(ny_boxplot_tmax_vs_tmin, ny_noaa_distrioveryear, ncol=2)
-
 ```
 
 
